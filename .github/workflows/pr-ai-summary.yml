@@ -1,0 +1,42 @@
+name: 🤖 PR 자동 요약 및 리뷰 (AI)
+
+on:
+  workflow_call:
+    secrets:
+      OPENAI_API_KEY:
+        required: true
+        description: "OpenAI API Key for PR Reviewer"
+permissions:
+  pull-requests: write # PR에 코멘트를 달기 위한 권한
+  contents: read
+
+jobs:
+  ai-review:
+    name: 📝 AI PR 요약 봇
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # 변경된 파일의 diff를 확인하기 위해 가져옴
+
+      - name: AI PR 리뷰어 실행
+        uses: coderabbitai/openai-pr-reviewer@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} # 👈 리포지토리 설정에 등록 필요
+        with:
+          debug: false
+          review_simple_changes: false
+          review_comment_lgtm: false
+          openai_model: "gpt-5-nano" # 가성비 좋은 모델 추천
+          system_message: |
+            당신은 시니어 파이썬/장고 개발자입니다. 
+            한국어로 PR을 요약하고, 코드의 잠재적 버그와 개선점을 친절하게 리뷰해주세요.
+            
+            [응답 포맷]
+            ### 📌 PR 요약
+            (변경 사항 3줄 요약)
+
+            ### 💡 코드 리뷰
+            (리뷰 내용)
